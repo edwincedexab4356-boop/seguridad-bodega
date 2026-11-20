@@ -1,0 +1,102 @@
+SISTEMA DE SEGURIDAD PARA BODEGAS
+Arduino UNO R4 WiFi · versión sin láser, sin cámara y sin microSD
+
+PIEZAS
+- Arduino UNO R4 WiFi
+- Sensor PIR HC-SR501 (detecta movimiento)
+- Sensor ultrasónico HC-SR04 (detecta a alguien cerca de la puerta)
+- Display de 7 segmentos + chip 74HC595 (cuenta regresiva 9 a 0)
+- Buzzer (pitidos y sirena)
+- Motor amarillo + puente H L298N + portapilas de 4 AA (cierra y abre la puerta)
+- Reloj RTC DS3231 (fecha y hora de cada evento)
+- Bluetooth HC-05 (control desde el celular)
+- Protoboard, 17 resistencias de 220 Ω y cables Dupont
+
+CONEXIONES
+(+) = riel rojo del protoboard (5V) · (–) = riel azul (GND). Todos los GND juntos.
+
+Arduino al protoboard:
+- 5V → riel rojo (+)
+- GND → riel azul (–)
+
+Bluetooth HC-05:
+- VCC → (+) · GND → (–)
+- TXD → D0
+- RXD ← D1 con divisor: D1 → 220 Ω → RXD, y de RXD → 220 Ω → 220 Ω → (–)
+
+Sensor PIR:
+- VCC → (+) · OUT → D2 · GND → (–)
+- Perillas: Sx (distancia) a la mitad, Tx (tiempo) todo a la izquierda. Puentecito en H.
+
+Buzzer:
+- (+) → D4 · (–) → riel (–)
+
+Ultrasónico HC-SR04:
+- VCC → (+) · Trig → D6 · Echo → D7 · GND → (–)
+
+Puente H L298N y motor:
+- OUT1 y OUT2 → los 2 cables del motor amarillo
+- +12V → rojo (+) del portapilas
+- GND → negro (–) del portapilas Y un cable al GND del Arduino (mismo tornillo)
+- +5V → vacío
+- IN1 → D8 · IN2 → D9
+- ENA: dejar PUESTO el puentecito negro (D5 queda sin conectar)
+- Si el motor gira al revés, cambiar de lugar sus 2 cables.
+
+Chip 74HC595 + display:
+- Pata 14 (DS) → A1 · pata 11 (SH_CP) → A2 · pata 12 (ST_CP) → A3
+- Patas 16 y 10 → (+) · patas 8 y 13 → (–)
+- Q0..Q6 (patas 15, 1, 2, 3, 4, 5, 6) → 2 resistencias de 220 Ω seguidas → segmentos a..g
+- Común del display → (–) (cátodo común). Si es ánodo común: común a (+) y escribir DISPLAY:A
+
+Reloj RTC DS3231:
+- VCC → (+) · GND → (–) · SDA → SDA · SCL → SCL
+
+Pines libres: D3, D5, D10, D11, D12, D13 y A0.
+
+Energía: Arduino con cargador de celular de 2 A (USB-C) o adaptador de 9 a 12 V. El motor va aparte con las 4 pilas AA.
+
+CÓMO FUNCIONA
+1. DESARMADO (display "–"): no vigila. La puerta se abre SOLO con la clave.
+2. SALIDA (display 9→0): escribiste ON; tienes 9 segundos para salir.
+3. ARMADO (display "A"): vigila el PIR y el ultrasónico.
+4. CUENTA (display 9→0 con pitidos): el PIR o el ultrasónico vieron a alguien. Hay que poner la clave antes de que llegue a 0.
+5. ALARMA (display "E" parpadeando): sirena 60 segundos y el motor CIERRA la puerta. Avisa al celular con fecha y hora. Luego sigue vigilando.
+- 3 claves malas = alarma (aunque esté desarmado).
+- La clave buena desarma el sistema Y abre la puerta con el motor.
+- El PIR tarda 30 segundos en calentar al encender.
+- Si se va la luz estando armado, al volver se arma solo.
+
+ÓRDENES (por el celular con Bluetooth o por el Monitor Serie a 115200)
+ON                   armar la bodega
+CODIGO:1234          desarmar, parar la alarma y ABRIR la puerta
+CERRAR               cerrar la puerta (abrir solo con la clave)
+ESTADO               ver todos los sensores
+PRUEBA               probar display, buzzer y motor
+SILENCIAR            callar la sirena (sigue armado)
+ALERTA               alarma manual
+DIST:30              distancia del ultrasónico para disparar (cm)
+CUENTA:9             segundos de la cuenta (1 a 9)
+MOTOR:1500           tiempo que gira el motor (milisegundos)
+SIRENA:60            segundos de sirena
+ZONA:1:0             apagar zona (1 = PIR, 2 = ultrasónico; :1 para prenderla)
+CLAVE:1234:5678      cambiar la clave (vieja:nueva)
+HORA:2026-11-20 14:30:00   poner la hora del reloj
+DISPLAY:A / DISPLAY:C      display ánodo o cátodo común
+FABRICA              volver a los ajustes de fábrica (clave 1234)
+AYUDA                ver todas las órdenes
+
+BLUETOOTH EN EL CELULAR
+Emparejar "HC-05" (clave 1234 o 0000) y usar la app "Serial Bluetooth Terminal". Velocidad 9600.
+
+SIMULADOR
+Desktop\seguridad-bodega\index.html: Arduino virtual con las mismas reglas, y botones para conectarlo al Arduino real por USB o Bluetooth.
+
+ARCHIVOS (Desktop\Conexiones\Seguridad para bodegas)
+- seguridad_bodega\seguridad_bodega.ino (programa)
+- Conexiones.html
+- Conexion completa.png
+- Como funciona el programa.png
+- Display y 74HC595 (protoboard).png
+- Puente H L298N y motor.png
+- Ultrasonico y PIR.png

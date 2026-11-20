@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conexiones · Seguridad para bodegas</title>
+<style>
+body{font:15px/1.5 "Segoe UI",system-ui,sans-serif;color:#1a1d24;max-width:1000px;margin:0 auto;padding:28px 22px}
+h1{margin:0 0 4px;font-size:26px}.sub{color:#5a6070;margin:0 0 18px}
+h2{font-size:17px;margin:28px 0 8px;border-bottom:2px solid #1a1d24;padding-bottom:4px}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #c9ced8;padding:7px 9px;text-align:left;vertical-align:top}
+th{background:#eef1f6}td.p{font-weight:700;color:#0a58c2;white-space:nowrap}
+.op{display:inline-block;font-size:11px;font-weight:700;background:#fff1d6;color:#8a5a00;border-radius:4px;padding:1px 6px;margin-left:6px}
+.caja{border:2px solid #0a58c2;border-radius:8px;padding:10px 14px;background:#f3f7ff;margin-top:18px}
+.ojo{border-left:4px solid #d33;background:#fff4f4;padding:8px 12px;margin:10px 0}
+code{background:#eef1f6;padding:1px 5px;border-radius:4px}
+</style></head><body>
+<h1>Conexiones · Seguridad para bodegas</h1>
+<p class="sub">Arduino UNO R4 WiFi · programa <code>seguridad_bodega.ino</code> · versión <b>sin láser, sin cámara y sin microSD</b> (20 de noviembre de 2026). Los pines D3 y A0 quedan libres.</p>
+
+<div class="caja"><b>Regla de oro:</b> todos los GND juntos (Arduino, sensores, L298N y el negativo de las pilas). Riel rojo del protoboard = 5V del Arduino, riel azul = GND.</div>
+
+<h2>1 · Sensor PIR HC-SR501</h2>
+<table><tr><th>Pata del PIR</th><th>Va a</th></tr>
+<tr><td>VCC</td><td class="p">5V</td></tr><tr><td>OUT (la del medio)</td><td class="p">D2</td></tr><tr><td>GND</td><td class="p">GND</td></tr></table>
+<p>Tarda <b>30 s</b> en calentar al encender. Gira las perillas: <i>Sx</i> (distancia) a la mitad y <i>Tx</i> (tiempo) al mínimo; el puente amarillo en <b>H</b>.</p>
+
+<h2>2 · Sensor ultrasónico HC-SR04 (mira hacia la puerta)</h2>
+<table><tr><th>Pata</th><th>Va a</th></tr>
+<tr><td>VCC</td><td class="p">5V</td></tr><tr><td>Trig</td><td class="p">D6</td></tr><tr><td>Echo</td><td class="p">D7</td></tr><tr><td>GND</td><td class="p">GND</td></tr></table>
+<p>Si alguien queda más cerca de <b>30 cm</b> (se cambia con <code>DIST:n</code>) empieza la cuenta regresiva.</p>
+
+<h2>3 · Buzzer</h2>
+<table><tr><th>Pata</th><th>Va a</th></tr><tr><td>+ (pata larga / cable rojo)</td><td class="p">D4</td></tr><tr><td>–</td><td class="p">GND</td></tr></table>
+
+<h2>4 · Motor amarillo con el puente H L298N (cierra la puerta)</h2>
+<table><tr><th>L298N</th><th>Va a</th></tr>
+<tr><td>ENA</td><td>déjale <b>puesto</b> el puentecito negro (D5 queda sin conectar)</td></tr><tr><td>IN1</td><td class="p">D8</td></tr><tr><td>IN2</td><td class="p">D9</td></tr>
+<tr><td>OUT1 y OUT2</td><td>las 2 patas del motor amarillo</td></tr>
+<tr><td>+12V</td><td>rojo (+) del portapilas de 4 AA</td></tr>
+<tr><td>GND</td><td>negro (–) del portapilas <b>y</b> un cable a GND del Arduino</td></tr>
+<tr><td>+5V del L298N</td><td>sin conectar</td></tr></table>
+<div class="ojo">Si al cerrar el motor gira al revés, intercambia los 2 cables del motor en OUT1/OUT2. Mientras no tengas las pilas puedes probar poniendo +12V del L298N al <b>5V</b> del Arduino (gira más lento).</div>
+
+<h2>5 · Display de 7 segmentos con el chip 74HC595 (cuenta 9 → 0)</h2>
+<p>La muesca del chip hacia la izquierda. Pata 1 abajo a la izquierda, se cuentan en sentido contrario a las agujas del reloj (8 abajo a la derecha, 9 arriba a la derecha, 16 arriba a la izquierda).</p>
+<table><tr><th>Pata del 74HC595</th><th>Va a</th></tr>
+<tr><td>16 VCC y 10 MR</td><td class="p">5V</td></tr><tr><td>8 GND y 13 OE</td><td class="p">GND</td></tr>
+<tr><td>14 DS</td><td class="p">A1</td></tr><tr><td>11 SH_CP</td><td class="p">A2</td></tr><tr><td>12 ST_CP</td><td class="p">A3</td></tr>
+<tr><td>15 Q0</td><td>220 Ω → 220 Ω → segmento <b>a</b></td></tr>
+<tr><td>1 Q1</td><td>220 Ω → 220 Ω → segmento <b>b</b></td></tr>
+<tr><td>2 Q2</td><td>220 Ω → 220 Ω → segmento <b>c</b></td></tr>
+<tr><td>3 Q3</td><td>220 Ω → 220 Ω → segmento <b>d</b></td></tr>
+<tr><td>4 Q4</td><td>220 Ω → 220 Ω → segmento <b>e</b></td></tr>
+<tr><td>5 Q5</td><td>220 Ω → 220 Ω → segmento <b>f</b></td></tr>
+<tr><td>6 Q6</td><td>220 Ω → 220 Ω → segmento <b>g</b></td></tr>
+<tr><td>7 Q7</td><td>punto (opcional, sin resistencia doble no lo pongas)</td></tr>
+<tr><td>9 Q7'</td><td>sin conectar</td></tr></table>
+<p><b>Pata común del display</b> (la del medio, arriba o abajo): si es <b>cátodo común</b> → GND; si es <b>ánodo común</b> → 5V y escribe <code>DISPLAY:A</code>. Si no sabes cuál es, prueba en GND; si salen los segmentos al revés, pásala a 5V con <code>DISPLAY:A</code>.</p>
+<p>Patas del display (mirándolo de frente, punto abajo a la derecha): arriba <b>g f com a b</b>, abajo <b>e d com c punto</b>.</p>
+<p><b>Sin el chip todavía:</b> la cuenta, la “A” de armado y la “!” de alarma salen igual en la <b>matriz de LEDs de la R4</b>.</p>
+
+<h2>6 · Reloj RTC DS3231</h2>
+<table><tr><th>Pata</th><th>Va a</th></tr><tr><td>VCC</td><td class="p">5V</td></tr><tr><td>GND</td><td class="p">GND</td></tr><tr><td>SDA</td><td class="p">SDA</td></tr><tr><td>SCL</td><td class="p">SCL</td></tr></table>
+<p>SDA y SCL son los 2 pines de arriba, al lado de AREF. Pon la hora con <code>HORA:2026-11-19 14:30:00</code>.</p>
+
+<h2>7 · Bluetooth HC-05 (control desde el celular)</h2>
+<table><tr><th>HC-05</th><th>Va a</th></tr>
+<tr><td>VCC</td><td class="p">5V</td></tr><tr><td>GND</td><td class="p">GND</td></tr>
+<tr><td>TXD</td><td class="p">D0</td></tr>
+<tr><td>RXD</td><td>D1 del Arduino → 220 Ω → <b>RXD</b>, y de RXD → 220 Ω → 220 Ω → GND (divisor, baja 5 V a 3,3 V)</td></tr>
+<tr><td>STATE y EN</td><td>sin conectar</td></tr></table>
+<p>En el celular: empareja <b>HC-05</b> (clave <b>1234</b> o <b>0000</b>) y abre la app <b>Serial Bluetooth Terminal</b>. Escribe las mismas órdenes (<code>ON</code>, <code>CODIGO:1234</code>, <code>ESTADO</code>…); el Arduino te contesta y te avisa solo cada vez que cambia el estado. Funciona a 9600 (la velocidad de fábrica del HC-05).</p>
+
+<h2>8 · Alimentación</h2>
+<div class="ojo">Con el Bluetooth y todos los sensores es mejor no depender del USB de la computadora. Alimenta el Arduino con un <b>cargador de celular de 2 A</b> por el USB-C o con un <b>adaptador de 9 V a 12 V</b> en el conector redondo. El motor va aparte, con las 4 pilas AA.</div>
+
+<h2>Resumen de pines</h2>
+<table><tr><th>Pin</th><th>Pieza</th><th>Pin</th><th>Pieza</th></tr>
+<tr><td class="p">D0 / D1</td><td>HC-05 TXD / RXD (con divisor)</td><td class="p">D8 / D9</td><td>L298N IN1 / IN2</td></tr>
+<tr><td class="p">D2</td><td>PIR OUT</td><td class="p">D10 – D13</td><td>libres</td></tr>
+<tr><td class="p">D3</td><td>libre</td><td class="p">A0</td><td>libre</td></tr>
+<tr><td class="p">D4</td><td>Buzzer +</td><td class="p">A1 / A2 / A3</td><td>74HC595 patas 14 / 11 / 12</td></tr>
+<tr><td class="p">D5</td><td>libre (ENA con su puentecito)</td><td class="p">SDA / SCL</td><td>RTC DS3231</td></tr>
+<tr><td class="p">D6 / D7</td><td>HC-SR04 Trig / Echo</td><td class="p">5V</td><td>el VCC de todo (riel +)</td></tr></table>
+<p><b>Resistencias de 220 Ω: 17</b> → 14 del display (2 por segmento) · 3 del divisor del HC-05.</p>
+
+<h2>Cómo funciona</h2>
+<table><tr><th>Estado</th><th>Display / matriz</th><th>Qué pasa</th></tr>
+<tr><td>Desarmado</td><td>–</td><td>No vigila.</td></tr>
+<tr><td>Salida</td><td>9 → 0</td><td>Después de <code>ON</code>, tienes 9 s para salir.</td></tr>
+<tr><td>Armado</td><td>A</td><td>Vigila el PIR y el ultrasónico.</td></tr>
+<tr><td>Cuenta</td><td>9 → 0 con pitidos</td><td>PIR o ultrasónico detectaron: pon <code>CODIGO:1234</code> antes de que llegue a 0.</td></tr>
+<tr><td>Alarma</td><td>E / ! parpadeando</td><td>Sirena 60 s, el motor cierra la puerta y avisa al celular con fecha y hora. 3 claves malas también dan alarma.</td></tr></table>
+
+<h2>Órdenes (celular por Bluetooth o Monitor Serie a 115200)</h2>
+<p><code>ON</code> armar · <code>CODIGO:1234</code> desarmar y abrir la puerta · <code>ESTADO</code> · <code>PRUEBA</code> (display, buzzer y motor) · <code>CERRAR</code> (abrir solo con la clave) · <code>SILENCIAR</code> · <code>ALERTA</code> · <code>DIST:30</code> · <code>CUENTA:9</code> · <code>MOTOR:1500</code> · <code>SIRENA:60</code> · <code>ZONA:1:0</code> (1 PIR, 2 ultrasónico) · <code>DISPLAY:A/C</code> · <code>CLAVE:1234:5678</code> · <code>HORA:…</code> · <code>FABRICA</code> · <code>AYUDA</code></p>
+<p>Los ajustes se guardan aunque se desconecte. Si se va la luz estando armado, al volver se arma solo.</p>
+</body></html>

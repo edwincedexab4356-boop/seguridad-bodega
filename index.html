@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seguridad para bodegas · Simulador</title>
+<meta name="description" content="Simulador del sistema de seguridad para bodegas: Arduino UNO R4 WiFi, sensor PIR, ultrasónico, display de 7 segmentos con 74HC595, buzzer, motor con L298N y Bluetooth HC-05.">
+<meta name="theme-color" content="#0b0f14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Cpath d='M12 30 32 14l20 16v22H12z' fill='%23f5a524'/%3E%3Crect x='25' y='36' width='14' height='16' fill='%23111'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121820; --panel2:#19212c; --line:#26313f; --txt:#eef2f6; --mut:#8c99a8;
+  --ambar:#f5a524; --verde:#22d37a; --rojo:#ff4d5e; --azul:#3ba7ff;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --tech: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 var(--tech);-webkit-tap-highlight-color:transparent}
+body{background-image:radial-gradient(900px 500px at 0% -10%,#f5a52418,transparent),radial-gradient(800px 500px at 110% 110%,#3ba7ff12,transparent)}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--line);background:#0b0f14e6;position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)}
+.marca{display:flex;align-items:center;gap:12px;margin-right:auto}
+.logo{width:44px;height:44px;border-radius:10px;background:#1a1f27;display:grid;place-items:center;border:1px solid var(--line)}
+.marca b{display:block;font-size:18px;letter-spacing:.08em}
+.marca small{color:var(--mut);font-size:12px;letter-spacing:.06em;display:block}
+a.btn{text-decoration:none;display:inline-block}
+.btn{border:1px solid var(--line);background:var(--panel2);padding:9px 14px;border-radius:10px;font-weight:600;transition:transform .12s ease, background .15s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+@media (hover:hover){.btn:not(:disabled):hover{background:#222c39}}
+.btn.am{background:#8a5a00;border-color:#c98a00}
+.btn.ve{background:#14783f;border-color:#1aa553}
+.btn.ro{background:#9b1c27;border-color:#c22a37}
+.btn.az{background:#0b5fa8;border-color:#3ba7ff}
+.modo{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.modo.real{color:#9fe8ff;border-color:#2a6c8a;background:#0b2a38}
+main{padding:16px 20px 40px;max-width:1400px;margin:0 auto}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.chip small{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.chip b{font-size:20px;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h3{margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.col{display:flex;flex-direction:column;gap:14px}
+svg{display:block;width:100%;height:auto}
+.fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fila+.fila{margin-top:10px}
+.etq{color:var(--mut);font-size:13px;min-width:105px}
+input[type=range]{flex:1;accent-color:var(--ambar)}
+.estado{font-size:26px;font-weight:700;letter-spacing:.08em}
+.e0{color:var(--mut)} .e1{color:var(--azul)} .e2{color:var(--verde)} .e3{color:var(--ambar)} .e4{color:var(--rojo)}
+.hw{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.teclado button{padding:12px 0;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:18px;font-weight:700}
+.clave{font-family:var(--mono);font-size:22px;letter-spacing:.4em;background:#06090d;border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:46px;text-align:center}
+#log{font-family:var(--mono);font-size:12.5px;max-height:300px;overflow:auto;background:#06090d;border:1px solid var(--line);border-radius:10px;padding:8px}
+#log div{padding:2px 0;border-bottom:1px solid #121820}
+#log .err{color:var(--rojo)}
+.consola{display:flex;gap:6px;margin-top:8px}
+.consola input{flex:1;background:#06090d;border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--txt);font-family:var(--mono)}
+.nota{color:var(--mut);font-size:12.5px;margin:6px 0 0}
+.alarma-flash{animation:flash .6s steps(2) infinite}
+@keyframes flash{50%{background:#3a0d12}}
+@media (prefers-reduced-motion:reduce){.alarma-flash{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="marca">
+    <div class="logo"><svg viewBox="0 0 64 64" width="30" height="30"><path d="M8 30 32 10l24 20v26H8z" fill="#f5a524"/><rect x="24" y="36" width="16" height="20" fill="#1a1f27"/></svg></div>
+    <div><b>SEGURIDAD PARA BODEGAS</b><small>Arduino UNO R4 WiFi · PIR · ultrasónico · display · motor · Bluetooth</small></div>
+  </div>
+  <span class="modo" id="modo">Simulador</span>
+  <button class="btn az" id="bUsb">Conectar por USB</button>
+  <button class="btn az" id="bBt">Conectar por Bluetooth</button>
+  <button class="btn" id="bDesc" disabled>Desconectar</button>
+  <button class="btn" id="bSonido" aria-pressed="true">🔊 Sonido</button>
+</header>
+
+<main>
+  <div class="chips">
+    <div class="chip"><small>Sistema</small><b id="cEstado">DESARMADO</b></div>
+    <div class="chip"><small>Cuenta</small><b id="cCuenta">–</b></div>
+    <div class="chip"><small>PIR</small><b id="cPir">calentando</b></div>
+    <div class="chip"><small>Ultrasónico</small><b id="cDist">–</b></div>
+    <div class="chip"><small>Puerta</small><b id="cPuerta">abierta</b></div>
+    <div class="chip"><small>Zonas</small><b id="cZonas">PIR · ULTRA</b></div>
+  </div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="card" id="planoCard">
+        <h3>Bodega (vista desde arriba)</h3>
+        <svg id="plano" viewBox="0 0 900 460" role="img" aria-label="Plano de la bodega con sensores">
+          <defs>
+            <pattern id="piso" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#20262f"/><path d="M40 0H0V40" fill="none" stroke="#2a313b" stroke-width="2"/></pattern>
+            <radialGradient id="cono" cx="0" cy="0" r="1"><stop offset="0" stop-color="#22d37a" stop-opacity=".35"/><stop offset="1" stop-color="#22d37a" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect x="30" y="30" width="700" height="400" rx="6" fill="url(#piso)" stroke="#5b6573" stroke-width="10"/>
+          <!-- estantes -->
+          <g fill="#5a3d22" stroke="#3b2715" stroke-width="3">
+            <rect x="70" y="70" width="230" height="46" rx="4"/><rect x="70" y="190" width="230" height="46" rx="4"/><rect x="70" y="310" width="230" height="46" rx="4"/>
+          </g>
+          <g fill="#c99a5b">
+            <rect x="80" y="76" width="40" height="34" rx="3"/><rect x="128" y="76" width="50" height="34" rx="3"/><rect x="186" y="76" width="40" height="34" rx="3"/><rect x="234" y="76" width="56" height="34" rx="3"/>
+            <rect x="80" y="196" width="60" height="34" rx="3"/><rect x="148" y="196" width="40" height="34" rx="3"/><rect x="196" y="196" width="94" height="34" rx="3"/>
+            <rect x="80" y="316" width="44" height="34" rx="3"/><rect x="132" y="316" width="70" height="34" rx="3"/><rect x="210" y="316" width="80" height="34" rx="3"/>
+          </g>
+          <text x="185" y="400" text-anchor="middle" fill="#8c99a8" font-size="15">mercancía</text>
+          <!-- PIR en la esquina -->
+          <path id="pirCono" d="M690 70 L420 40 A300 300 0 0 0 470 330 Z" fill="url(#cono)" opacity=".6"/>
+          <circle cx="690" cy="70" r="16" fill="#eee" stroke="#2e7d32" stroke-width="5"/>
+          <text x="690" y="108" text-anchor="middle" fill="#cfe9cf" font-size="13" font-weight="700">PIR</text>
+          <!-- puerta (a la derecha) -->
+          <rect x="722" y="190" width="16" height="140" fill="#0b0f14"/>
+          <g id="puerta" transform="rotate(-80 730 190)">
+            <rect x="726" y="190" width="10" height="140" rx="2" fill="#f5a524"/>
+          </g>
+          <text x="790" y="350" fill="#8c99a8" font-size="13">entrada</text>
+          <!-- motor -->
+          <rect x="742" y="160" width="40" height="26" rx="5" fill="#f2c200" stroke="#a88600" stroke-width="2"/>
+          <text x="762" y="152" text-anchor="middle" fill="#f2c200" font-size="12" font-weight="700">motor</text>
+          <circle id="motorGiro" cx="762" cy="173" r="7" fill="none" stroke="#5a4500" stroke-width="3" stroke-dasharray="6 5"/>
+          <!-- ultrasónico mirando a la puerta desde adentro -->
+          <rect x="640" y="245" width="34" height="30" rx="4" fill="#1f5fa8"/>
+          <circle cx="650" cy="260" r="6" fill="#cfd6df"/><circle cx="664" cy="260" r="6" fill="#cfd6df"/>
+          <text x="657" y="296" text-anchor="middle" fill="#9fc6ff" font-size="12" font-weight="700">ultrasónico</text>
+          <line id="haz" x1="674" y1="260" x2="860" y2="260" stroke="#3ba7ff" stroke-width="3" stroke-dasharray="6 6" opacity=".7"/>
+          <text id="distTxt" x="820" y="285" text-anchor="middle" fill="#9fc6ff" font-size="13"></text>
+          <!-- persona -->
+          <g id="persona" opacity="0">
+            <circle cx="0" cy="0" r="22" fill="#e85d75" stroke="#fff" stroke-width="3"/>
+            <circle cx="0" cy="-4" r="9" fill="#ffd9b0"/>
+            <text x="0" y="44" text-anchor="middle" fill="#ffb3c0" font-size="12" font-weight="700">persona</text>
+          </g>
+          <!-- sirena -->
+          <g id="sirena" opacity=".25"><circle cx="400" cy="250" r="22" fill="#ff4d5e"/><text x="400" y="256" text-anchor="middle" font-size="18">🔔</text></g>
+          <text x="800" y="440" text-anchor="middle" fill="#5b6573" font-size="12">afuera</text>
+        </svg>
+        <div class="fila" id="ctrlSim">
+          <button class="btn am" id="bEntrar">🚶 Entra un intruso</button>
+          <button class="btn" id="bAcercar">Alguien se acerca a la puerta</button>
+          <button class="btn" id="bMover">Movimiento adentro (PIR)</button>
+          <button class="btn" id="bSalir">La persona se va</button>
+          <button class="btn" id="bSaltar">Saltar calentamiento del PIR</button>
+        </div>
+        <div class="fila" id="ctrlDist">
+          <span class="etq">Distancia ultrasónico</span>
+          <input type="range" id="rDist" min="3" max="200" value="200">
+          <b id="rDistV" style="min-width:64px;text-align:right">200 cm</b>
+        </div>
+        <p class="nota" id="notaSim">Simulador: un Arduino virtual con las mismas reglas que el programa real. Conéctalo por USB o Bluetooth para ver el Arduino de verdad.</p>
+      </div>
+
+      <div class="card">
+        <h3>Lo que pasa (eventos)</h3>
+        <div id="log" aria-live="polite"></div>
+        <div class="consola">
+          <input id="cmd" placeholder="Escribe una orden: ON, CODIGO:1234, ESTADO, DIST:50…" autocomplete="off">
+          <button class="btn" id="bEnviar">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card" id="panelEstado">
+        <h3>Estado</h3>
+        <div class="estado e0" id="txtEstado">DESARMADO</div>
+        <div class="hw" style="margin-top:12px">
+          <svg id="seg7" viewBox="0 0 120 180" style="width:110px" aria-label="Display de 7 segmentos">
+            <rect width="120" height="180" rx="12" fill="#111"/>
+            <g id="segs" stroke-linecap="round" stroke-width="13">
+              <line data-s="a" x1="34" y1="22" x2="82" y2="22"/>
+              <line data-s="b" x1="90" y1="30" x2="90" y2="82"/>
+              <line data-s="c" x1="90" y1="98" x2="90" y2="150"/>
+              <line data-s="d" x1="34" y1="158" x2="82" y2="158"/>
+              <line data-s="e" x1="26" y1="98" x2="26" y2="150"/>
+              <line data-s="f" x1="26" y1="30" x2="26" y2="82"/>
+              <line data-s="g" x1="34" y1="90" x2="82" y2="90"/>
+            </g>
+            <circle id="segDp" cx="106" cy="160" r="6"/>
+          </svg>
+          <svg id="matriz" viewBox="0 0 132 92" style="width:150px" aria-label="Matriz de LEDs del R4"></svg>
+          <div>
+            <div class="etq">Buzzer</div><b id="tBuz">en silencio</b>
+            <div class="etq" style="margin-top:8px">Motor</div><b id="tMot">parado</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Control (como en el celular)</h3>
+        <div class="fila">
+          <button class="btn ve" id="bOn">ON · Armar</button>
+          <button class="btn ro" id="bAlerta">ALERTA</button>
+          <button class="btn" id="bSil">Silenciar</button>
+        </div>
+        <div class="fila">
+          <button class="btn" id="bCerrar">Cerrar puerta</button>
+          <button class="btn" id="bAbrir">Abrir puerta (con clave)</button>
+          <button class="btn" id="bPrueba">PRUEBA</button>
+        </div>
+        <div style="margin-top:12px" class="etq">Clave: desarma y ABRE la puerta</div>
+        <div class="clave" id="clave">····</div>
+        <div class="teclado" id="teclado"></div>
+        <p class="nota">La clave de fábrica es <b>1234</b>. La puerta solo se abre con la clave. 3 claves malas = alarma.</p>
+      </div>
+
+      <div class="card">
+        <h3>Ajustes</h3>
+        <div class="fila"><span class="etq">Disparo ultra</span><input type="range" id="aDist" min="5" max="150" value="30"><b id="aDistV">30 cm</b></div>
+        <div class="fila"><span class="etq">Cuenta</span><input type="range" id="aCuenta" min="1" max="9" value="9"><b id="aCuentaV">9 s</b></div>
+        <div class="fila">
+          <label class="etq"><input type="checkbox" id="zPir" checked> Zona PIR</label>
+          <label class="etq"><input type="checkbox" id="zUlt" checked> Zona ultrasónico</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>Conexiones y programa</h3>
+    <div class="fila">
+      <a class="btn" href="imagenes/conexion-completa.png" target="_blank" rel="noopener">Conexión completa</a>
+      <a class="btn" href="imagenes/ultrasonico-y-pir.png" target="_blank" rel="noopener">Ultrasónico y PIR</a>
+      <a class="btn" href="imagenes/puente-h-l298n-y-motor.png" target="_blank" rel="noopener">Puente H y motor</a>
+      <a class="btn" href="imagenes/display-y-74hc595-protoboard.png" target="_blank" rel="noopener">Display y 74HC595</a>
+      <a class="btn" href="imagenes/como-funciona-el-programa.png" target="_blank" rel="noopener">Cómo funciona</a>
+      <a class="btn" href="conexiones.html" target="_blank" rel="noopener">Hoja de conexiones</a>
+      <a class="btn" href="seguridad_bodega/seguridad_bodega.ino" download>Descargar el programa (.ino)</a>
+    </div>
+  </div>
+</main>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const NOMBRE = ['DESARMADO','SALIDA','ARMADO','CUENTA','ALARMA'];
+const DIG = [0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F];
+const SEG_GUION = 0x40, SEG_A = 0x77, SEG_E = 0x79;
+
+// ---------------- Arduino virtual (mismas reglas que seguridad_bodega.ino) ----------------
+const V = {
+  estado:0, t0:0, seg:0, origen:'-', puerta:false, motorHasta:0, motorDir:0,
+  claves:0, clave:'1234', dist:30, cuenta:9, motorMs:1500, sirena:60, zonas:3,
+  arranque:Date.now(), pirListo:false, distancia:-1, ultraCerca:0, pirMov:false,
+};
+const S = { modo:'sim', ver:{ estado:0, seg:0, pir:false, dist:-1, puerta:false, pirListo:false, zonas:3, lim:30 }, sonido:true };
+
+function ahora(){ const d=new Date(); return d.toLocaleTimeString('es-PA',{hour12:false}); }
+function log(t, err){ const d=document.createElement('div'); if(err) d.className='err'; d.innerHTML='<span style="color:#5b6573">'+ahora()+'</span> '+t; const L=$('log'); L.prepend(d); while(L.children.length>120) L.lastChild.remove(); }
+function ev(t){ log(esc(t)); }
+
+function vCambiar(e){ V.estado=e; V.t0=Date.now(); }
+function vArmar(){
+  if (V.estado!==0){ ev('Ya está armado'); return; }
+  V.seg=V.cuenta; vCambiar(1); ev('ARMADO (salida '+V.cuenta+' s)'); pito(1800,.12);
+}
+function vDesarmar(como){ V.claves=0; vCambiar(0); ev('DESARMADO por '+como); pito(2200,.08); setTimeout(()=>pito(2200,.08),130); }
+function vCerrar(){ if(V.puerta) return; V.puerta=true; V.motorDir=1; V.motorHasta=Date.now()+V.motorMs; ev('PUERTA CERRADA (el motor gira)'); }
+function vAbrir(){ if(!V.puerta){ ev('La puerta ya está abierta'); return; } V.puerta=false; V.motorDir=-1; V.motorHasta=Date.now()+V.motorMs; ev('PUERTA ABIERTA (el motor gira)'); }
+function vDisparo(quien, inmediato){
+  if (V.estado!==2 && !(V.estado===3 && inmediato)) return;
+  V.origen=quien;
+  if (inmediato){ vCambiar(4); ev('ALARMA por '+quien); vCerrar(); }
+  else { V.seg=V.cuenta; vCambiar(3); ev('DETECCIÓN '+quien+' - cuenta regresiva'); }
+}
+function vOrden(s){
+  s=s.trim(); const u=s.toUpperCase(); if(!u) return;
+  if (u==='ON'||u==='ARMAR') vArmar();
+  else if (u.startsWith('CODIGO:')){
+    if (s.slice(7)===V.clave){ if(V.estado!==0) vDesarmar('clave'); else { V.claves=0; ev('Clave correcta'); } if(V.puerta) vAbrir(); }
+    else { V.claves++; ev('CLAVE INCORRECTA ('+V.claves+')'); pito(400,.4);
+      if (V.claves>=3 && V.estado!==4){ V.estado=2; vDisparo('CLAVE',true); } }
+  }
+  else if (u==='ESTADO') ev('Sistema '+NOMBRE[V.estado]+' · PIR '+(V.pirListo?(V.pirMov?'MOVIMIENTO':'quieto'):'calentando')+' · ultra '+(V.distancia<0?'sin eco':V.distancia+' cm')+' · puerta '+(V.puerta?'CERRADA':'abierta'));
+  else if (u==='PRUEBA'){ if(V.estado!==0) ev('Desarma primero'); else vPrueba(); }
+  else if (u==='CERRAR'){ if(V.puerta) ev('Ya está cerrada'); else vCerrar(); }
+  else if (u==='ABRIR') ev('La puerta solo se abre con la clave: CODIGO:tu_clave');
+  else if (u==='SILENCIAR'){ if(V.estado===4){ ev('SILENCIADA'); vCambiar(2); } }
+  else if (u==='ALERTA'){ V.estado=2; vDisparo('MANUAL',true); }
+  else if (u.startsWith('DIST:')){ const v=parseInt(s.slice(5)); if(v>=3&&v<=250){ V.dist=v; ev('OK distancia '+v+' cm'); } }
+  else if (u.startsWith('CUENTA:')){ const v=parseInt(s.slice(7)); if(v>=1&&v<=9){ V.cuenta=v; ev('OK cuenta '+v+' s'); } }
+  else if (u.startsWith('MOTOR:')){ const v=parseInt(s.slice(6)); if(v>=100&&v<=10000){ V.motorMs=v; ev('OK motor '+v+' ms'); } }
+  else if (u.startsWith('SIRENA:')){ const v=parseInt(s.slice(7)); if(v>=5&&v<=250){ V.sirena=v; ev('OK sirena '+v+' s'); } }
+  else if (u.startsWith('ZONA:')){ const z=parseInt(s.slice(5,6)), v=parseInt(s.slice(7)); if(z>=1&&z<=2){ const b=1<<(z-1); V.zonas = v? (V.zonas|b) : (V.zonas&~b); ev('OK zona '+z+(v?' prendida':' apagada')); } }
+  else if (u.startsWith('CLAVE:')){ const p=s.split(':'); if(p[1]!==V.clave) ev('Clave vieja incorrecta'); else if(!/^\d{4,6}$/.test(p[2]||'')) ev('La nueva debe tener 4 a 6 números'); else { V.clave=p[2]; ev('CLAVE CAMBIADA'); } }
+  else if (u==='AYUDA') ev('Órdenes: ON, CODIGO:1234, ESTADO, PRUEBA, CERRAR, SILENCIAR, ALERTA, DIST:n, CUENTA:n, MOTOR:n, SIRENA:n, ZONA:n:v, CLAVE:vieja:nueva');
+  else ev('No entiendo: '+s+' (escribe AYUDA)');
+}
+let pruebaHasta=0;
+function vPrueba(){ ev('PRUEBA: display 9..0, pitidos y motor'); pruebaHasta=Date.now()+2800+V.motorMs*2;
+  for(let i=9;i>=0;i--) setTimeout(()=>{ pruebaDigito=i; pito(1200+i*100,.08); },(9-i)*250);
+  setTimeout(()=>{ V.motorDir=1; V.motorHasta=Date.now()+V.motorMs; },2800);
+  setTimeout(()=>{ V.motorDir=-1; V.motorHasta=Date.now()+V.motorMs; },2800+V.motorMs+300);
+  setTimeout(()=>{ pruebaDigito=null; ev('PRUEBA terminada'); },2800+V.motorMs*2+400);
+}
+let pruebaDigito=null;
+
+// sensores virtuales
+let persona = { x:-1, y:-1, visible:false, objetivo:null };
+function vSensores(){
+  V.pirListo = Date.now()-V.arranque > 30000;
+  // ultrasónico: mide hacia la puerta (eje x desde 674). Persona en la franja y 220..300
+  let d = parseInt($('rDist').value);
+  if (persona.visible && Math.abs(persona.y-260)<40 && persona.x>674) d = Math.max(3, Math.round((persona.x-674)/2));
+  V.distancia = d>=200 ? -1 : d;
+  if (V.distancia>0 && V.distancia<V.dist){ if(V.ultraCerca<10) V.ultraCerca++; } else V.ultraCerca=0;
+  const ultraAct = V.ultraCerca>=2;
+  const pirAct = V.pirListo && V.pirMov;
+  if (V.estado===2){
+    if ((V.zonas&1) && pirAct) vDisparo('PIR',false);
+    else if ((V.zonas&2) && ultraAct) vDisparo('ULTRASONICO',false);
+  }
+}
+let ultSeg=-1;
+function vTick(){
+  vSensores();
+  const t=Date.now()-V.t0;
+  if (V.estado===1||V.estado===3){
+    const r=V.cuenta-Math.floor(t/1000);
+    if (r!==V.seg){ V.seg=r; if(r>=0) pito(V.estado===3?2500:1500, V.estado===3?.15:.06); }
+    if (r<0){
+      if (V.estado===1){ vCambiar(2); ev('VIGILANDO'); pito(1800,.3); }
+      else { vCambiar(4); ev('ALARMA por '+V.origen+' (no pusieron la clave)'); vCerrar(); }
+    }
+  }
+  if (V.estado===4 && t>V.sirena*1000){ ev('FIN DE SIRENA - sigue vigilando'); vCambiar(2); }
+  if (V.motorHasta && Date.now()>=V.motorHasta){ V.motorHasta=0; V.motorDir=0; }
+  S.ver = { estado:V.estado, seg:Math.max(0,V.seg), pir:V.pirListo&&V.pirMov, dist:V.distancia, puerta:V.puerta, pirListo:V.pirListo, zonas:V.zonas, lim:V.dist, motor:V.motorDir };
+}
+
+// ---------------- sonido ----------------
+let AC=null, osc=null, gan=null;
+function audio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+function pito(f,d){ if(!S.sonido||S.modo==='real') return; const a=audio(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type='square'; o.frequency.value=f; g.gain.value=.05; o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+d); }
+function sirena(on){
+  const a=AC; if(!a) return;
+  if (on && S.sonido && !osc){ osc=a.createOscillator(); gan=a.createGain(); osc.type='sawtooth'; gan.gain.value=.04; osc.connect(gan).connect(a.destination); osc.start(); }
+  if ((!on||!S.sonido) && osc){ osc.stop(); osc=null; }
+  if (osc) osc.frequency.value = (Math.floor(Date.now()/300)%2) ? 1600 : 1000;
+}
+
+// ---------------- pintar ----------------
+const matrizEl=$('matriz'); const leds=[];
+for(let r=0;r<8;r++) for(let c=0;c<12;c++){ const e=document.createElementNS('http://www.w3.org/2000/svg','circle'); e.setAttribute('cx',8+c*10.5); e.setAttribute('cy',9+r*10.5); e.setAttribute('r',3.6); matrizEl.appendChild(e); leds.push(e); }
+const FUENTE={0:[14,17,19,21,25,17,14],1:[4,12,4,4,4,4,14],2:[14,17,1,2,4,8,31],3:[31,2,4,2,1,17,14],4:[2,6,10,18,31,2,2],5:[31,16,30,1,1,17,14],6:[6,8,16,30,17,17,14],7:[31,1,2,4,8,8,8],8:[14,17,17,14,17,17,14],9:[14,17,17,15,1,2,12],A:[14,17,17,31,17,17,17],'-':[0,0,0,31,0,0,0],'!':[4,4,4,4,4,0,4]};
+function pintarMatriz(sim, inv){
+  const f=FUENTE[sim]||FUENTE['-'];
+  for(let r=0;r<8;r++) for(let c=0;c<12;c++){ let on=false; if(r<7&&c>=4&&c<9) on=!!(f[r]&(16>>(c-4))); if(inv) on=!on; leds[r*12+c].setAttribute('fill', on?'#ff3b30':'#2a1416'); }
+}
+function pintarSeg(b){
+  document.querySelectorAll('#segs line').forEach((l,i)=>{ const on=!!(b&(1<<'abcdefg'.indexOf(l.dataset.s))); l.setAttribute('stroke', on?'#ff3b30':'#2a1416'); });
+  $('segDp').setAttribute('fill', (b&0x80)?'#ff3b30':'#2a1416');
+}
+let anguloPuerta=-80;
+function pintar(){
+  const v=S.ver, e=v.estado, parp=Math.floor(Date.now()/300)%2===1;
+  $('cEstado').textContent=NOMBRE[e]; $('txtEstado').textContent=NOMBRE[e]; $('txtEstado').className='estado e'+e;
+  $('cCuenta').textContent=(e===1||e===3)? v.seg+' s':'–';
+  $('cPir').textContent= !v.pirListo? 'calentando' : (v.pir?'MOVIMIENTO':'quieto');
+  $('cDist').textContent= v.dist<0? 'sin eco' : v.dist+' cm';
+  $('cPuerta').textContent= v.puerta? 'CERRADA':'abierta';
+  $('cZonas').textContent= [(v.zonas&1)?'PIR':null,(v.zonas&2)?'ULTRA':null].filter(Boolean).join(' · ')||'ninguna';
+  // display + matriz
+  let b, sim, inv=false;
+  if (S.modo==='sim' && pruebaDigito!==null){ b=DIG[pruebaDigito]; sim=pruebaDigito; }
+  else if (e===0){ b=SEG_GUION; sim='-'; }
+  else if (e===1||e===3){ b=DIG[Math.min(9,Math.max(0,v.seg))]; sim=Math.min(9,Math.max(0,v.seg)); inv = e===3 && parp; }
+  else if (e===2){ b= (Math.floor(Date.now()/1000)%2)? SEG_A : (SEG_A|0x80); sim='A'; }
+  else { b= parp? SEG_E:0; sim='!'; inv=parp; }
+  pintarSeg(b); pintarMatriz(sim, inv);
+  // plano
+  const meta = v.puerta? 0 : -80; anguloPuerta += (meta-anguloPuerta)*0.12; if(Math.abs(meta-anguloPuerta)<0.5) anguloPuerta=meta;
+  $('puerta').setAttribute('transform','rotate('+anguloPuerta.toFixed(1)+' 730 190)');
+  const mot = S.modo==='sim' ? V.motorDir : 0;
+  $('tMot').textContent = mot>0? 'cerrando…' : mot<0? 'abriendo…' : 'parado';
+  $('motorGiro').setAttribute('stroke', mot? '#ff8a00':'#5a4500');
+  $('tBuz').textContent = e===4? 'SIRENA' : (e===1||e===3)? 'pitando' : 'en silencio';
+  $('sirena').setAttribute('opacity', e===4 ? (parp? 1:.35) : .15);
+  $('planoCard').classList.toggle('alarma-flash', e===4);
+  $('pirCono').setAttribute('opacity', v.pir? .95 : (v.pirListo? .45:.15));
+  $('haz').setAttribute('x2', v.dist<0? 860 : Math.min(860, 674+v.dist*2));
+  $('haz').setAttribute('stroke', (v.dist>0 && v.dist<v.lim)? '#ff4d5e':'#3ba7ff');
+  $('distTxt').textContent = v.dist<0? 'sin eco' : v.dist+' cm';
+  const p=$('persona'); p.setAttribute('opacity', persona.visible?1:0); if(persona.visible) p.setAttribute('transform','translate('+persona.x+','+persona.y+')');
+  sirena(S.modo==='sim' && e===4);
+}
+
+// ---------------- persona animada (solo simulador) ----------------
+let ruta=[], rutaT=null;
+function caminar(puntos, alFinal){
+  clearInterval(rutaT); ruta=puntos.slice(); persona.visible=true;
+  if (persona.x<0){ persona.x=ruta[0][0]; persona.y=ruta[0][1]; ruta.shift(); }
+  rutaT=setInterval(()=>{
+    if(!ruta.length){ clearInterval(rutaT); alFinal&&alFinal(); return; }
+    const [tx,ty]=ruta[0], dx=tx-persona.x, dy=ty-persona.y, d=Math.hypot(dx,dy), paso=9;
+    if(d<=paso){ persona.x=tx; persona.y=ty; ruta.shift(); } else { persona.x+=dx/d*paso; persona.y+=dy/d*paso; }
+    // el PIR ve a la persona dentro de la bodega
+    V.pirMov = persona.visible && persona.x<720;
+  },60);
+}
+$('bEntrar').onclick=()=>{ audio(); persona.x=-1; caminar([[880,260],[760,260],[700,260],[560,250],[420,150]], ()=>{ setTimeout(()=>{ V.pirMov=false; },3000); }); ev('Simulación: entra un intruso por la puerta'); };
+$('bAcercar').onclick=()=>{ audio(); persona.x=-1; caminar([[880,260],[720,260]], ()=>{}); ev('Simulación: alguien se queda frente a la puerta'); };
+$('bMover').onclick=()=>{ audio(); V.pirMov=true; ev('Simulación: movimiento dentro de la bodega'); setTimeout(()=>{ if(!persona.visible||persona.x>=720) V.pirMov=false; },3000); };
+$('bSalir').onclick=()=>{ caminar([[760,260],[880,260]], ()=>{ persona.visible=false; persona.x=-1; V.pirMov=false; }); ev('Simulación: la persona se va'); };
+$('bSaltar').onclick=()=>{ V.arranque=Date.now()-31000; ev('PIR listo (calentamiento saltado)'); };
+$('rDist').oninput=()=>{ const v=+$('rDist').value; $('rDistV').textContent= v>=200? 'nada' : v+' cm'; };
+
+// ---------------- órdenes (simulador o Arduino real) ----------------
+function orden(t){ if(!t) return; if(S.modo==='real') enviarReal(t); else { log('<b>&gt; '+esc(t)+'</b>'); vOrden(t); } }
+$('bOn').onclick=()=>{ audio(); orden('ON'); };
+$('bAlerta').onclick=()=>{ audio(); orden('ALERTA'); };
+$('bSil').onclick=()=>orden('SILENCIAR');
+$('bCerrar').onclick=()=>orden('CERRAR');
+$('bAbrir').onclick=()=>{ $('clave').scrollIntoView({behavior:'smooth',block:'center'}); $('clave').style.borderColor='#f5a524'; setTimeout(()=>$('clave').style.borderColor='',1500); log('Para abrir la puerta escribe la clave en el teclado y pulsa OK'); };
+$('bPrueba').onclick=()=>{ audio(); orden('PRUEBA'); };
+$('bEnviar').onclick=()=>{ audio(); orden($('cmd').value.trim()); $('cmd').value=''; };
+$('cmd').onkeydown=e=>{ if(e.key==='Enter') $('bEnviar').click(); };
+$('bSonido').onclick=()=>{ S.sonido=!S.sonido; $('bSonido').textContent=S.sonido?'🔊 Sonido':'🔇 Sin sonido'; $('bSonido').setAttribute('aria-pressed',S.sonido); if(!S.sonido) sirena(false); };
+let clave='';
+['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(k=>{ const b=document.createElement('button'); b.textContent=k; if(k==='OK'){ b.style.background='#14783f'; } b.onclick=()=>{ audio();
+  if(k==='⌫') clave=clave.slice(0,-1); else if(k==='OK'){ if(clave) orden('CODIGO:'+clave); clave=''; } else if(clave.length<6) clave+=k;
+  $('clave').textContent = clave? '•'.repeat(clave.length) : '····'; }; $('teclado').appendChild(b); });
+$('aDist').oninput=()=>{ $('aDistV').textContent=$('aDist').value+' cm'; };
+$('aDist').onchange=()=>orden('DIST:'+$('aDist').value);
+$('aCuenta').oninput=()=>{ $('aCuentaV').textContent=$('aCuenta').value+' s'; };
+$('aCuenta').onchange=()=>orden('CUENTA:'+$('aCuenta').value);
+$('zPir').onchange=()=>orden('ZONA:1:'+($('zPir').checked?1:0));
+$('zUlt').onchange=()=>orden('ZONA:2:'+($('zUlt').checked?1:0));
+
+// ---------------- Arduino real (Web Serial: USB 115200 o Bluetooth HC-05 9600) ----------------
+let puerto=null, escritor=null, lector=null, sondeo=null;
+const SPP='00001101-0000-1000-8000-00805f9b34fb';
+async function conectar(bt){
+  if(!('serial' in navigator)){ log('Este navegador no puede conectarse. Usa Chrome o Edge en la computadora.', true); return; }
+  try{
+    let pt;
+    if (bt){
+      try { pt = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds:[SPP], filters:[{ bluetoothServiceClassId:SPP }] }); }
+      catch(e){ if(e.name==='NotFoundError') throw e; pt = await navigator.serial.requestPort(); }
+    } else pt = await navigator.serial.requestPort();
+    await pt.open({ baudRate: bt? 9600 : 115200 });
+    puerto=pt; escritor=pt.writable.getWriter();
+    S.modo='real'; $('modo').textContent= bt? 'Arduino real · Bluetooth' : 'Arduino real · USB'; $('modo').classList.add('real');
+    $('ctrlSim').hidden=true; $('ctrlDist').hidden=true; $('notaSim').textContent='Conectado al Arduino real: lo que ves aquí lo leen sus sensores.';
+    $('bDesc').disabled=false; $('bUsb').disabled=true; $('bBt').disabled=true; persona.visible=false; sirena(false);
+    log('Conectado a <b>'+(bt?'Bluetooth HC-05':'Arduino por USB')+'</b>');
+    leerSerial();
+    sondeo=setInterval(()=>enviarReal('ST',true),1000);
+    setTimeout(()=>enviarReal('ST',true),1200);
+  }catch(e){
+    if(e.name==='NotFoundError') log('No se eligió ningún equipo. ¿Está emparejado el HC-05 (clave 1234 o 0000)?', true);
+    else log('No se pudo conectar: '+esc(e.message||e), true);
+  }
+}
+async function enviarReal(t, callado){
+  if(!escritor) return;
+  if(!callado) log('<b>&gt; '+esc(t)+'</b>');
+  try{ await escritor.write(new TextEncoder().encode(t+'\n')); }catch(e){ log('Error al enviar: '+esc(e.message), true); }
+}
+async function leerSerial(){
+  const dec=new TextDecoder(); let buf='';
+  while(puerto && puerto.readable){
+    lector=puerto.readable.getReader();
+    try{
+      for(;;){ const {value,done}=await lector.read(); if(done) break; buf+=dec.decode(value,{stream:true});
+        let i; while((i=buf.search(/\r?\n/))>=0){ const l=buf.slice(0,i).trim(); buf=buf.slice(i+1).replace(/^\n/,''); if(l) linea(l); } }
+    }catch(e){ log('Se perdió la conexión: '+esc(e.message), true); break; }
+    finally{ lector.releaseLock(); }
+  }
+}
+function linea(l){
+  if(l.startsWith('ST,')){
+    const p=l.split(',');
+    if(p.length>=7) S.ver={ estado:+p[1], seg:+p[2], pir:p[3]==='1', dist:+p[4], puerta:p[5]==='1', pirListo:p[7]===undefined?true:p[7]==='1', zonas:p[8]===undefined?3:+p[8], lim:p[9]===undefined?30:+p[9] };
+    return;
+  }
+  if(l.startsWith('SE,')){ S.ver.estado=+l.slice(3); return; }
+  if(l.startsWith('EV,')){ const r=l.slice(3); const c=r.indexOf(','); log('<span style="color:#f5a524">'+esc(r.slice(0,c))+'</span> '+esc(r.slice(c+1))); return; }
+  if(/^ESTADO ->/.test(l)) return;
+  log(esc(l));
+}
+async function desconectar(){
+  clearInterval(sondeo);
+  try{ if(lector) await lector.cancel(); }catch(e){}
+  try{ if(escritor){ escritor.releaseLock(); } }catch(e){}
+  try{ if(puerto) await puerto.close(); }catch(e){}
+  puerto=null; escritor=null; S.modo='sim';
+  $('modo').textContent='Simulador'; $('modo').classList.remove('real');
+  $('ctrlSim').hidden=false; $('ctrlDist').hidden=false; $('notaSim').textContent='Simulador: un Arduino virtual con las mismas reglas que el programa real.';
+  $('bDesc').disabled=true; $('bUsb').disabled=false; $('bBt').disabled=false;
+  log('Desconectado: vuelve el simulador');
+}
+$('bUsb').onclick=()=>conectar(false);
+$('bBt').onclick=()=>conectar(true);
+$('bDesc').onclick=desconectar;
+
+// ---------------- bucle ----------------
+log('Simulador listo. El PIR tarda 30 s en calentar (o pulsa "Saltar calentamiento").');
+setInterval(()=>{ if(S.modo==='sim') vTick(); pintar(); },100);
+</script>
+</body>
+</html>
